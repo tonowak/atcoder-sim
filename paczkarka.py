@@ -207,15 +207,15 @@ class Paczkarka:
     def prepare_folders(self):
         print("Creating folders")
         self.main_folder = self.name_to_dir(self.problem_name) + '/'
-        #if os.path.exists(self.main_folder):
-            #shutil.rmtree(self.main_folder)
-        #if os.path.exists(self.main_folder[:-1] + ".zip"):
-            #os.remove(self.main_folder[:-1] + ".zip")
+        if os.path.exists(self.main_folder):
+            shutil.rmtree(self.main_folder)
+        if os.path.exists(self.main_folder[:-1] + ".zip"):
+            os.remove(self.main_folder[:-1] + ".zip")
         self.doc_folder = self.main_folder + "doc/"
         self.prog_folder = self.main_folder + "prog/"
         self.in_folder = self.main_folder + "in/"
         self.out_folder = self.main_folder + "out/"
-        #self.create_dirs([self.main_folder, self.doc_folder, self.prog_folder, self.in_folder, self.out_folder])
+        self.create_dirs([self.main_folder, self.doc_folder, self.prog_folder, self.in_folder, self.out_folder])
 
     def create_config(self):
         # if not os.path.exists(self.main_folder + "Simfile"):

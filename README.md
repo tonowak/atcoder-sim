@@ -1,5 +1,5 @@
 ## Potrzebne programy
-pdflatex
+pdflatex, pandoc
 
 ## Instalacja
 ```
