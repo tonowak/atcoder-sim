@@ -53,6 +53,10 @@ class Paczkarka:
             string = string[:-1]
         if string:
             string = string.replace("\n\n\n", "\n\n")
+            string = string.replace("\"", "\"{}")
+            string = string.replace("#", "\\#")
+            string = string.replace("≦", " \\leq ")
+            string = string.replace("≤", " \\leq ")
         return string
 
     image_cnt = 0
@@ -167,8 +171,6 @@ class Paczkarka:
         input = input.replace("\n\n", "\n")
         input = input.replace("\n", "\\newline\n")
         inter = inter.replace("\n\n\n", "\n\n")
-        inter = inter.replace("\"", "\"{}")
-        output = output.replace("\"", "\"{}")
 
         # print(example_notes)
         notes = "\\section{Notes}\n\n\\begin{itemize}\n"
@@ -201,6 +203,9 @@ class Paczkarka:
         latex_file.write(latex)
         latex_file.close()
         self.compile_statement(self.doc_folder, "doc.tex", "doc.pdf")
+        latex_file = open(self.doc_folder + "doc.tex", "w")
+        latex_file.write(latex.replace("logo", "doc/logo"))
+        latex_file.close()
         for not_needed in ["aux", "log", "out"]:
             os.remove(self.doc_folder + "doc." + not_needed)
 
