@@ -35,7 +35,7 @@ class Paczkarka:
                     self.memory_limit = "256"
 
         for i in bs.find_all("span", {"class": "h2"}):
-            self.problem_name = i.string
+            self.problem_name = i.contents[0].strip()
             print("- Problem name:", self.problem_name)
 
     def name_to_dir(self, name):
@@ -114,7 +114,7 @@ class Paczkarka:
 
     def compile_statement(self, latex_dir, latex_file, pdf_file):
         print("Compiling " + latex_dir + latex_file)
-        shutil.copyfile("logo.jpg", latex_dir + "logo.jpg")
+        shutil.copyfile("sim-statement.cls", latex_dir + "sim-statement.cls")
         for it in range(2):
             subprocess.call(["cd " + latex_dir + " && pdflatex --interaction nonstopmode " + latex_file],
                     shell=True, stdout=self.logfile, stderr=self.logfile)
@@ -199,15 +199,15 @@ class Paczkarka:
         # latex = latex.replace("~timeLimit~", self.time_limit)
         latex = latex.replace("~memoryLimit~", self.memory_limit)
 
-        latex_file = open(self.doc_folder + "doc.tex", "w")
+        latex_file = open(self.doc_folder + "statement.tex", "w")
         latex_file.write(latex)
         latex_file.close()
-        self.compile_statement(self.doc_folder, "doc.tex", "doc.pdf")
-        latex_file = open(self.doc_folder + "doc.tex", "w")
+        self.compile_statement(self.doc_folder, "statement.tex", "statement.pdf")
+        latex_file = open(self.doc_folder + "statement.tex", "w")
         latex_file.write(latex.replace("logo", "doc/logo"))
         latex_file.close()
         for not_needed in ["aux", "log", "out"]:
-            os.remove(self.doc_folder + "doc." + not_needed)
+            os.remove(self.doc_folder + "statement." + not_needed)
 
     def prepare_folders(self):
         print("Creating folders")
@@ -234,88 +234,6 @@ class Paczkarka:
         # simfile.write("global_time_limit: " + self.time_limit + '\n')
         simfile.close()
 
-    def download_testcases(self):
-        print("Downloading testcases info")
-        subprocess.call(["zsh req1.sh > dropbox.txt && zsh req2.sh >> dropbox.txt && zsh req3.sh >> dropbox.txt"],
-                shell=True, stdout=self.logfile, stderr=self.logfile)
-        with open("dropbox.txt", 'r') as linkfile:
-            linkstring = linkfile.read()
-
-        if False:
-            links = re.findall("https:\/\/www\.dropbox\.com\/sh\/\w+\/[a-zA-Z0-9_-]+\/(\w+)\?dl=0", linkstring)
-            links = list(dict.fromkeys(links))
-            links.sort()
-            print(links)
-
-        links = re.findall("(https:\/\/www\.dropbox\.com\/sh\/\w+\/[a-zA-Z0-9_-]+\/\w+\?dl=0)", linkstring)
-        links = list(dict.fromkeys(links))
-        links.sort()
-        assert len(links) >= 150
-        dropbox_name = self.round_name.upper()
-        print("- Trying to find testcases named", dropbox_name)
-        for l in links:
-            if dropbox_name in l.upper():
-                link = l
-        assert link
-        link = link.replace("dl=0", "dl=1")
-        print("- Found link", link)
-
-        print("Downloading zip with testcases")
-        utils_folder = self.main_folder + "utils/"
-        self.create_dirs([utils_folder])
-        with requests.get(link, stream=True) as r:
-            with open(utils_folder + "testcases.zip", "wb") as f:
-                for block in tqdm(r.iter_content(1024)):
-                    f.write(block)
-
-        print("Reorganizing testcases")
-        with ZipFile(utils_folder + "testcases.zip", 'r') as zip_ref:
-            zip_ref.extractall(utils_folder)
-
-        for folder in [self.atcoder_label.lower() + '/', self.atcoder_label.upper() + '/']:
-            if os.path.isdir(utils_folder + folder):
-                for test_type in ["in", "out"]:
-                    if os.path.isdir(utils_folder + folder + test_type):
-                        used_number = {}
-                        used_number[0] = True
-                        sample_used_number = {}
-                        sample_used_number[0] = True
-                        for test in os.listdir(utils_folder + folder + test_type):
-                            is_sample = False
-                            number = 0
-                            for prefix in ["s", "sample", "0_", "a", "sample_"]:
-                                if re.search("^" + prefix + "\d+\.txt$", test):
-                                    number = int(re.findall("^" + prefix + "(\d+)", test)[0])
-                                    is_sample = True
-                                    if number in sample_used_number:
-                                        number = 1
-                                    while number in sample_used_number:
-                                        number += 1
-                                    sample_used_number[number] = True
-                                    break
-
-                            if not is_sample:
-                                if re.search("\d+\w+\d+", test):
-                                    number = int(re.findall("\d+\w+(\d+)", test)[0])
-                                elif re.search("\d+", test):
-                                    number = int(re.findall("(\d+)", test)[0])
-                                else:
-                                    assert False
-                                if number in used_number:
-                                    number = 1
-                                while number in used_number:
-                                    number += 1
-                                used_number[number] = True
-
-                            new_name = "test"
-                            if is_sample:
-                                new_name += "0" + string.ascii_lowercase[number - 1]
-                            else:
-                                new_name += str(number)
-                            print("- Renaming", test_type + '/' + test, "to", new_name + '.' + test_type)
-                            os.rename(utils_folder + folder + test_type + '/' + test, self.main_folder + test_type + '/' + new_name + '.' + test_type)
-        shutil.rmtree(utils_folder)
-
     def download_code(self, link):
         site = self.session.get(link).text
         bs = BeautifulSoup(site, "html5lib")
@@ -327,7 +245,7 @@ class Paczkarka:
 
     def get_solutions(self):
         print("Downloading submissions")
-        link = self.atcoder_link + "contests/" + self.round_name.lower() + "/submissions?f.Task=" + self.round_name.lower() + '_' + self.atcoder_label.lower() + "&f.Language=3003&f.Status=%s&f.User="
+        link = self.atcoder_link + "contests/" + self.round_name.lower() + "/submissions?f.Task=" + self.round_name.lower() + '_' + self.atcoder_label.lower() + "&f.Language=C%%2B%%2B&f.Status=%s&f.User="
         for status in ["AC", "WA", "TLE"]:
             site = self.session.get(link % status).text
             bs = BeautifulSoup(site, "html5lib")
@@ -384,8 +302,6 @@ class Paczkarka:
         self.prepare_folders()
         self.create_statement(bs)
         self.create_config()
-        self.download_testcases()
         self.get_solutions()
-        self.sipzip()
     
 paczkarka = Paczkarka(sys.argv[1], sys.argv[2])
